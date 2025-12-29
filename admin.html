@@ -1,31 +1,122 @@
-<script type="module">
-    // Import tambahannya: push, update, remove
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, push, update, remove, onValue } 
-    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUMI COMMAND CENTER</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #0d1117; color: #c9d1d9; font-family: monospace; }
+        .card { background-color: #161b22; border: 1px solid #30363d; }
+        .btn-lumi { background-color: #238636; color: white; border: none; }
+        .btn-lumi:hover { background-color: #2ea043; }
+        .form-control { background-color: #0d1117; border: 1px solid #30363d; color: white; }
+        .form-control:focus { background-color: #0d1117; color: white; border-color: #58a6ff; }
+    </style>
+</head>
+<body class="p-4">
+    <div class="container">
+        <h2 class="text-center mb-4 text-success">LUMI COMMAND CENTER</h2>
 
-    // ... Config Firebase sama ...
-    const db = getDatabase(app);
+        <div class="card p-3 mb-4">
+            <h5>Tambah Request Manual</h5>
+            <div class="row g-2">
+                <div class="col-md-5">
+                    <input type="text" id="inputUser" class="form-control" placeholder="Nama Viewer">
+                </div>
+                <div class="col-md-5">
+                    <input type="text" id="inputSong" class="form-control" placeholder="Judul Lagu">
+                </div>
+                <div class="col-md-2">
+                    <button onclick="addRequest()" class="btn btn-lumi w-100">TAMBAH</button>
+                </div>
+            </div>
+        </div>
 
-    // FUNGSI: Tambah Request Baru
-    window.addRequest = function(user, song) {
-        push(ref(db, 'requests'), {
-            user: user,
-            song: song,
-            status: "Pending",
-            timestamp: Date.now()
+        <div class="card p-3">
+            <table class="table table-dark table-hover" id="adminTable">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Song</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, update, remove, onValue } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // --- PASTE CONFIG YANG SAMA PERSIS DARI index.html DI SINI ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDT11MkrZml7G5G4VdqJnd_5IUszn1eZLk",
+            authDomain: "holumii-queue.firebaseapp.com",
+            databaseURL: "https://holumii-queue-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "holumii-queue",
+            storageBucket: "holumii-queue.firebasestorage.app",
+            messagingSenderId: "691138107076",
+            appId: "1:691138107076:web:f8cec6f0445b7f628b1b91"
+            };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // FUNGSI 1: BACA DATA (Sama kayak index.html tapi ada tombol)
+        onValue(ref(db, 'requests'), (snapshot) => {
+            const data = snapshot.val();
+            const tbody = document.querySelector("#adminTable tbody");
+            tbody.innerHTML = "";
+
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    const req = data[key];
+                    const isPlaying = req.status === 'Playing';
+                    
+                    const row = `
+                        <tr>
+                            <td>${req.user}</td>
+                            <td>${req.song}</td>
+                            <td>
+                                ${isPlaying ? '<span class="badge bg-success">PLAYING</span>' : '<span class="badge bg-secondary">WAITING</span>'}
+                            </td>
+                            <td>
+                                ${!isPlaying ? `<button onclick="window.setStatus('${key}', 'Playing')" class="btn btn-sm btn-info">▶ Play</button>` : ''}
+                                <button onclick="window.delReq('${key}')" class="btn btn-sm btn-danger">X Done</button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            }
         });
-    }
 
-    // FUNGSI: Ganti Status jadi Playing
-    window.markPlaying = function(id) {
-        update(ref(db, 'requests/' + id), { status: "Playing" });
-    }
+        // FUNGSI 2: TAMBAH DATA
+        window.addRequest = function() {
+            const user = document.getElementById('inputUser').value;
+            const song = document.getElementById('inputSong').value;
+            if(user && song) {
+                push(ref(db, 'requests'), { user: user, song: song, status: "Waiting" });
+                document.getElementById('inputUser').value = "";
+                document.getElementById('inputSong').value = "";
+            }
+        }
 
-    // FUNGSI: Hapus (Done)
-    window.deleteRequest = function(id) {
-        remove(ref(db, 'requests/' + id));
-    }
-    
-    // ... Tambahkan listener onValue seperti di index.html untuk menampilkan list di admin panel juga ...
-</script>
+        // FUNGSI 3: UPDATE STATUS
+        window.setStatus = function(id, status) {
+            // Reset semua jadi waiting dulu biar cuma 1 yang playing (opsional)
+            update(ref(db, 'requests/' + id), { status: status });
+        }
+
+        // FUNGSI 4: HAPUS
+        window.delReq = function(id) {
+            remove(ref(db, 'requests/' + id));
+        }
+    </script>
+</body>
+</html>
