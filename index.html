@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holumi Live Queue</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #06402B; /* Hijau gelap latar belakang */
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card {
+            background-color: #032b1d; /* Hijau lebih gelap untuk kontainer */
+            border: 1px solid #0f5c40;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .table-lumi {
+            --bs-table-bg: transparent;
+            --bs-table-color: white;
+            border-color: #0f5c40;
+        }
+        .badge-playing {
+            background-color: #00ffd5;
+            color: black;
+            box-shadow: 0 0 10px #00ffd5;
+        }
+    </style>
+</head>
+<body class="py-5">
+
+    <div class="container">
+        <h2 class="text-center mb-4 fw-bold" style="letter-spacing: 2px;">LUMI LIVE QUEUE</h2>
+
+        <div class="card p-3">
+            <div class="table-responsive">
+                <table class="table table-lumi table-hover align-middle" id="queueTable">
+                    <thead>
+                        <tr class="text-uppercase text-secondary border-bottom">
+                            <th scope="col" style="color: #00ffd5;">User</th>
+                            <th scope="col" style="color: #00ffd5;">Song Request</th>
+                            <th scope="col" style="color: #00ffd5;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="3" class="text-center py-4">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // CONFIG ANDA (PASTIKAN INI SAMA DENGAN YANG DI GAMBAR ANDA)
+        const firebaseConfig = {
+    apiKey: "AIzaSyDT11MkrZml7G5G4VdqJnd_5IUszn1eZLk",
+    authDomain: "holumii-queue.firebaseapp.com",
+    databaseURL: "https://holumii-queue-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "holumii-queue",
+    storageBucket: "holumii-queue.firebasestorage.app",
+    messagingSenderId: "691138107076",
+    appId: "1:691138107076:web:f8cec6f0445b7f628b1b91"
+    };
+    
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const queueRef = ref(db, 'requests');
+
+        onValue(queueRef, (snapshot) => {
+            const data = snapshot.val();
+            const tableBody = document.querySelector("#queueTable tbody");
+            tableBody.innerHTML = ""; 
+
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    const req = data[key];
+                    
+                    // Logika Badge Status (Agar warna beda kalau Playing)
+                    let statusBadge = '';
+                    if(req.status === 'Playing') {
+                        statusBadge = `<span class="badge badge-playing px-3 py-2">PLAYING</span>`;
+                    } else {
+                        statusBadge = `<span class="badge text-bg-secondary px-3 py-2">${req.status}</span>`;
+                    }
+
+                    const row = `
+                        <tr style="border-bottom: 1px solid #0f5c40;">
+                            <td class="fw-bold">${req.user}</td>
+                            <td>${req.song}</td>
+                            <td>${statusBadge}</td>
+                        </tr>`;
+                    tableBody.innerHTML += row;
+                });
+            } else {
+                tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">Belum ada request.</td></tr>`;
+            }
+        });
+    </script>
+</body>
+</html>

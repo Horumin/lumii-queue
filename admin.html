@@ -1,0 +1,31 @@
+<script type="module">
+    // Import tambahannya: push, update, remove
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, push, update, remove, onValue } 
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    // ... Config Firebase sama ...
+    const db = getDatabase(app);
+
+    // FUNGSI: Tambah Request Baru
+    window.addRequest = function(user, song) {
+        push(ref(db, 'requests'), {
+            user: user,
+            song: song,
+            status: "Pending",
+            timestamp: Date.now()
+        });
+    }
+
+    // FUNGSI: Ganti Status jadi Playing
+    window.markPlaying = function(id) {
+        update(ref(db, 'requests/' + id), { status: "Playing" });
+    }
+
+    // FUNGSI: Hapus (Done)
+    window.deleteRequest = function(id) {
+        remove(ref(db, 'requests/' + id));
+    }
+    
+    // ... Tambahkan listener onValue seperti di index.html untuk menampilkan list di admin panel juga ...
+</script>
